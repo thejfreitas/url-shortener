@@ -2,53 +2,55 @@
 
 namespace App\Http\Controllers;
 
-use App\ShortLink;
-
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
+use App\Repositories\ShortLinkRepository;
 
 
 class ShortLinkController extends Controller
 {
+    private $shortLinkRespository;
+
+    public function __construct(ShortLinkRepository $shortLinkRespository) 
+    {
+        $this->shortLinkRespository = $shortLinkRespository;
+    }
+
     /**
      * Display all short links
+     * 
+     * @return view
      */
-    public function index() {
-        $links = ShortLink::latest()->get();
+    public function index() 
+    {
+        $links = $this->shortLinkRespository->all();
 
         return view('index', compact('links'));
     }
 
     /**
-     * Store a given link in the database
+     * Store a given url
      * 
-     * @param $request
+     * @param Request $request
      * 
+     * @return redirect
      */
     public function store(Request $request) 
     {
-        $linkCode = Str::random(6);
-
-        $request->request->add(['code' => $linkCode]);
-        
-        $data = $request->validate([
-            'url' => 'required|url|unique:short_links,url',
-            'code' => 'string|unique:short_links,code'
-        ]);
-
-        ShortLink::create($data);
-        
-        return redirect()->route('shortener.index')->with('success', 'Your url has been shortened.');
+        if ($this->shortLinkRespository->store($request)) {
+            return redirect()->route('shortener.index')->with('success', 'Your url has been shortened.');    
+        }
     }
 
-    
-    public function redirectShortLink($linkCode) {
-        
-        $link = ShortLink::where('code', $linkCode)->first();
-        
-        if ($link) {
-            $link->update(['hits' => $link->hits++]);
-
+    /**
+     * Get a given link code and redirects to the stored url
+     * 
+     * @param $linkCode
+     * 
+     * @return redirect
+     */
+    public function redirectShortLink($linkCode) 
+    {    
+        if ($link = $this->shortLinkRespository->findAndUpdateShortLink($linkCode)) {
             return redirect($link->url);
         }
 
