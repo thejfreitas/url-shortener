@@ -17,8 +17,8 @@ class ShortLink extends Model
             'id' => $this->id,
             'url' => $this->url,
             'code' => $this->code,
-            'hits' => $this->code,
-            'created_at' => $this->created_at,
+            'hits' => $this->hits,
+            'created_at' => $this->created_at->toDateTimeString(),
             'updated_at' => $this->updated_at->diffForHumans(),
         ];
     }
