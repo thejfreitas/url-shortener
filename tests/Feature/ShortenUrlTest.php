@@ -11,11 +11,15 @@ class ShortenUrlTest extends TestCase
 {
     use RefreshDatabase;
 
-    /**
-     * A basic test example.
-     *
-     * @return void
-     */
+    public function testUserAccessTheIndexPage()
+    {
+        $response = $this->get(route('shortener.index'));
+
+        $response
+            ->assertStatus(RESPONSE::HTTP_OK)
+            ->assertSeeInOrder(['Url Shortener', 'Insert your url', 'Shorten']);
+    }
+
     public function testUserStoreUrlAndRedirectsToHome()
     {
         $response = $this->post(route('shortener.store.link'), [
@@ -26,6 +30,11 @@ class ShortenUrlTest extends TestCase
         $response
             ->assertStatus(Response::HTTP_FOUND)
             ->assertRedirect(route('shortener.index'));
+
+        $shortLink = route('shortener.index') . '/xyz';
+
+        $responseHome = $this->get(route('shortener.index'));
+        $responseHome->assertSeeInOrder(['https://jfreitas.net', $shortLink]);
     }
 
     public function testUrlIsRequired()
