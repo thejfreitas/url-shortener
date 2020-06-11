@@ -23,7 +23,7 @@ class ShortenUrlTest extends TestCase
     public function testUserStoreUrlAndRedirectsToHome()
     {
         $response = $this->post(route('shortener.store.link'), [
-            'url' => 'https://jfreitas.net',
+            'url' => 'https://jfreitas.dev',
             'code' => 'xyz',
         ]);
 
@@ -34,7 +34,7 @@ class ShortenUrlTest extends TestCase
         $shortLink = route('shortener.index') . '/xyz';
 
         $responseHome = $this->get(route('shortener.index'));
-        $responseHome->assertSeeInOrder(['https://jfreitas.net', $shortLink]);
+        $responseHome->assertSeeInOrder(['https://jfreitas.dev', $shortLink]);
     }
 
     public function testUrlIsRequired()
@@ -57,7 +57,7 @@ class ShortenUrlTest extends TestCase
 
     public function testUrlMustBeUnique()
     {
-        $url = 'https://jfreitas.net';
+        $url = 'https://jfreitas.dev';
 
         $this->post(route('shortener.store.link'), [
             'url' => $url,
@@ -72,7 +72,7 @@ class ShortenUrlTest extends TestCase
 
     public function testShortUrlMustRedirect()
     {
-        $url = 'https://jfreitas.net';
+        $url = 'https://jfreitas.dev';
         $code = 'XYZPTO';
 
         $this->post(route('shortener.store.link'), [
@@ -85,5 +85,30 @@ class ShortenUrlTest extends TestCase
         $response = $this->get($redirectUrl);
 
         $response->assertRedirect($url);
+    }
+
+    public function testHitsMustIncreaseByOneForEachRedirect()
+    {
+        $url = 'https://jfreitas.dev';
+        $code = 'XYZPTO';
+        $redirectionTimes = 3;
+
+        $this->post(route('shortener.store.link'), [
+            'url' => $url,
+            'code' => $code,
+        ]);
+
+        for ($x = 0; $x < $redirectionTimes; $x++) {
+            $response = $this->get(
+                route('shortener.get.link', ['code' => $code])
+            );
+        }
+
+        $shortLink = route('shortener.index') . '/' . $code;
+
+        $responseHome = $this->get(route('shortener.index'));
+        $responseHome
+            ->assertSeeInOrder([$url, $shortLink])
+            ->assertSeeText($redirectionTimes);
     }
 }
